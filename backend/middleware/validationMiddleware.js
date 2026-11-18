@@ -4,9 +4,10 @@ const { validationResult, check } = require('express-validator');
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const errorDetails = errors.array().map((err) => err.msg).join('. ');
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
+      message: errorDetails || 'Validation failed',
       errors: errors.array().map((err) => ({
         field: err.path,
         message: err.msg,
@@ -19,10 +20,13 @@ const validate = (req, res, next) => {
 // Reusable validation chains
 const registerValidation = [
   check('name', 'Full name is required and must be between 2 and 100 characters').trim().isLength({ min: 2, max: 100 }),
-  check('email', 'Please provide a valid email address').trim().isEmail(),
+  check('email', 'Please provide a valid email address').trim().isEmail().normalizeEmail(),
   check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
   check('role', 'Role must be student, officer, or admin').optional().isIn(['student', 'officer', 'admin']),
-  check('phone', 'Please provide a valid contact number').optional().isMobilePhone(),
+  check('phone', 'Please provide a valid contact number (10-15 digits)')
+    .optional()
+    .customSanitizer((val) => (typeof val === 'string' ? val.replace(/[\s\-()]/g, '') : val))
+    .isMobilePhone('any'),
   validate,
 ];
 
