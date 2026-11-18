@@ -1,0 +1,360 @@
+<div class="home-page">
+  <!-- Hero Section (Deep Blue Gradient with Centered Badge, Title, CTA, Search & Stats) -->
+  <section class="hero-section">
+    <div class="hero-inner-container">
+      <!-- White Top Rounded Badge -->
+      <div class="hero-top-badge">
+        <img src="assets/iem-logo.png" alt="IEM Logo" class="badge-logo" />
+        <div class="badge-text-col">
+          <span class="badge-name">INSTITUTE OF ENGINEERING &amp; MANAGEMENT</span>
+          <span class="badge-accred">NAAC 'A' Grade &bull; NBA Accredited &bull; MAKAUT Affiliated</span>
+        </div>
+      </div>
+
+      <!-- Main Headline with Quality highlighted in Gold -->
+      <h1 class="hero-main-title">
+        Empowering Next-Gen Leaders with <span class="gold-highlight">Quality</span> Education
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="hero-subtitle-text">
+        West Bengal's Pioneer Engineering &amp; Management Institute (Est. 1989). Admissions Open for B.Tech, BCA, MCA, BBA, and MBA Programs for Session 2026-2027.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="hero-cta-row">
+        <a routerLink="/auth/register" class="btn-hero-apply">
+          <span class="material-icons">apps</span> Apply for Admission 2026
+        </a>
+        <a (click)="scrollToElement('about')" href="#about" class="btn-hero-discover">
+          <span class="material-icons">school</span> Discover IEM
+        </a>
+      </div>
+
+      <!-- Application Tracker Search Box -->
+      <div class="hero-tracker-card">
+        <div class="tracker-input-box">
+          <input
+            type="text"
+            [(ngModel)]="trackNumber"
+            placeholder="Enter Application No. (e.g. IEM2026BTECH-CSE001)"
+            (keyup.enter)="trackApplication()"
+          />
+          <button class="btn-track-submit" (click)="trackApplication()">
+            Track Application
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Stats Bar (1989, NAAC 'A', 72 LPA, 100%+) -->
+    <div class="hero-bottom-stats">
+      <div class="stats-inner-grid">
+        <div class="stat-box">
+          <div class="stat-number">1989</div>
+          <div class="stat-label">Pioneer Legacy (37+ Years)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">NAAC 'A'</div>
+          <div class="stat-label">Accredited Excellence</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">&#8377;72 LPA</div>
+          <div class="stat-label">Highest Placement Package</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">100%+</div>
+          <div class="stat-label">Consistent Placement Record</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Degree Programs Section (Exact 3-Column Card Grid from Screenshot) -->
+  <section id="programs" class="programs-section">
+    <div class="programs-container">
+      <div class="programs-header-block">
+        <span class="programs-red-tag">ACADEMIC PROGRAMS &amp; SEATS</span>
+        <h2 class="programs-main-heading">Degree Programs Offered</h2>
+        <p class="programs-sub-text">
+          Explore branch seat matrix, eligibility criteria, and fee structure for Session 2026-2027.
+        </p>
+      </div>
+
+      <!-- 3-Column Grid of Course Cards -->
+      <div class="programs-grid-3col" *ngIf="!isLoading">
+        <div class="program-card" *ngFor="let course of courses">
+          <!-- Card Top Row: Code Badge & Red Dept Text -->
+          <div class="card-top-badges">
+            <span class="course-code-pill">{{ course.courseCode }}</span>
+            <span class="course-dept-red">{{ course.department }}</span>
+          </div>
+
+          <!-- Course Title -->
+          <h3 class="program-title">{{ course.name }}</h3>
+
+          <!-- Details Box (Light Gray / Subtle Blue-Gray Background) -->
+          <div class="program-details-box">
+            <div class="p-detail-row">
+              <span class="p-label">Duration:</span>
+              <span class="p-val">{{ course.duration }}</span>
+            </div>
+            <div class="p-detail-row">
+              <span class="p-label">Available Seats:</span>
+              <span class="p-val seats-available-green">{{ course.availableSeats }} / {{ course.totalSeats }}</span>
+            </div>
+            <div class="p-detail-row">
+              <span class="p-label">Semester Fee:</span>
+              <span class="p-val">&#8377; 85,000</span>
+            </div>
+          </div>
+
+          <!-- Eligibility Criteria -->
+          <p class="program-eligibility">
+            Eligibility: Min 60% in PCM, Valid WBJEE / JEE Main Rank
+          </p>
+
+          <!-- Full-Width Apply Button -->
+          <button class="btn-program-apply" (click)="applyForCourse(course)">
+            Apply for {{ course.courseCode }} &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="loading-state">
+        <p>Loading degree programs...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT IEM SECTION (id="about") ================= -->
+  <section id="about" class="about-section">
+    <div class="about-container">
+      <div class="about-header-block">
+        <span class="programs-red-tag">LEGACY OF EXCELLENCE &bull; ESTD 1989</span>
+        <h2 class="section-main-heading">About Institute of Engineering &amp; Management (IEM)</h2>
+        <p class="section-sub-text">
+          Pioneering technical and management education in Eastern India for over 37 years.
+        </p>
+      </div>
+
+      <div class="about-content-grid">
+        <!-- Left: Narrative & Key Strengths -->
+        <div class="about-narrative">
+          <p class="about-lead-p">
+            Established in 1989, <strong>Institute of Engineering &amp; Management (IEM)</strong> is West Bengal's oldest, most distinguished private engineering and management institution, globally celebrated for academic excellence, innovative pedagogy, and record-setting campus placements.
+          </p>
+          <p class="about-body-p">
+            Holding <strong>Autonomous Status</strong> under MAKAUT and accredited with <strong>NAAC Grade 'A'</strong>, IEM combines rigorous academic discipline with active industry immersion. Located strategically in Sector V, Salt Lake &mdash; Kolkata's premier IT and Electronics corridor &mdash; our students engage directly with top technology giants, startup incubators, and advanced research laboratories.
+          </p>
+
+          <div class="about-pillars-grid">
+            <div class="pillar-card">
+              <span class="material-icons pillar-icon">military_tech</span>
+              <div class="pillar-info">
+                <h4>NAAC Grade 'A' &amp; NBA</h4>
+                <p>Recognized for supreme educational quality, cutting-edge labs, and experienced doctoral faculty.</p>
+              </div>
+            </div>
+            <div class="pillar-card">
+              <span class="material-icons pillar-icon">trending_up</span>
+              <div class="pillar-info">
+                <h4>100%+ Consistent Placements</h4>
+                <p>Top recruiters including Google, Microsoft, Adobe, TCS, Cognizant, and Amazon hire annually.</p>
+              </div>
+            </div>
+            <div class="pillar-card">
+              <span class="material-icons pillar-icon">business</span>
+              <div class="pillar-info">
+                <h4>Sector V IT Corridor</h4>
+                <p>Direct exposure to multinational IT firms, industry summits, and corporate internships.</p>
+              </div>
+            </div>
+            <div class="pillar-card">
+              <span class="material-icons pillar-icon">public</span>
+              <div class="pillar-info">
+                <h4>Global Alumni Influence</h4>
+                <p>50,000+ alumni leading technology and executive roles in over 35 nations worldwide.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Fast Facts Card -->
+        <div class="about-fast-facts-card">
+          <div class="facts-card-header">
+            <span class="material-icons">verified</span>
+            <span>INSTITUTIONAL METRICS</span>
+          </div>
+
+          <div class="facts-list">
+            <div class="fact-item">
+              <div class="f-val">1989</div>
+              <div class="f-desc">Year of Inception (37+ Years of Heritage)</div>
+            </div>
+            <div class="fact-item">
+              <div class="f-val">&#8377;72 LPA</div>
+              <div class="f-desc">Highest Domestic &amp; Global Salary Package</div>
+            </div>
+            <div class="fact-item">
+              <div class="f-val">&#8377;6.5 LPA</div>
+              <div class="f-desc">Average Engineering Placement Package</div>
+            </div>
+            <div class="fact-item">
+              <div class="f-val">150+</div>
+              <div class="f-desc">Patents Filed &amp; Scopus Research Publications</div>
+            </div>
+            <div class="fact-item">
+              <div class="f-val">50,000+</div>
+              <div class="f-desc">Proud Alumni Working in Fortune 500 Enterprises</div>
+            </div>
+          </div>
+
+          <a href="https://iem.edu.in" target="_blank" rel="noopener noreferrer" class="btn-official-iem">
+            Visit Official IEM Main Portal &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTACT & HELPDESK SECTION (id="contact") ================= -->
+  <section id="contact" class="contact-section">
+    <div class="contact-container">
+      <div class="contact-header-block">
+        <span class="programs-red-tag">ADMISSIONS DIRECTORY &amp; SUPPORT</span>
+        <h2 class="section-main-heading">Contact &amp; Admission Helpdesk</h2>
+        <p class="section-sub-text">
+          Have queries regarding degree programs, eligibility, or online admission? Reach our counseling team.
+        </p>
+      </div>
+
+      <!-- 4 Quick Contact Channels -->
+      <div class="contact-channels-grid">
+        <div class="channel-card">
+          <div class="channel-icon-circle"><span class="material-icons">call</span></div>
+          <h4>Helpline Numbers</h4>
+          <p class="primary-text">+91 33 2357 2059 / 2995</p>
+          <span class="sub-text">Monday &ndash; Saturday: 9:30 AM &ndash; 6:00 PM</span>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-icon-circle green"><span class="material-icons">chat</span></div>
+          <h4>WhatsApp Counseling</h4>
+          <p class="primary-text">+91 9674005988 / 8010700500</p>
+          <span class="sub-text">Immediate guidance from admissions officers</span>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-icon-circle red"><span class="material-icons">email</span></div>
+          <h4>Admissions Email</h4>
+          <p class="primary-text">admissions&#64;iemcal.com</p>
+          <span class="sub-text">Verified reply within 24 business hours</span>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-icon-circle blue"><span class="material-icons">place</span></div>
+          <h4>Campus Address</h4>
+          <p class="primary-text">Sector V, Salt Lake</p>
+          <span class="sub-text">Electronics Complex, Kolkata - 700091</span>
+        </div>
+      </div>
+
+      <!-- Online Admission Inquiry Form -->
+      <div class="inquiry-form-card">
+        <div class="form-title-col">
+          <h3>Send an Admission Inquiry</h3>
+          <p>Fill out the form below and an IEM admissions counselor will get in touch with you directly with program brochures and enrollment instructions.</p>
+
+          <div class="inquiry-alert success" *ngIf="inquirySuccessMsg">
+            <span class="material-icons">check_circle</span>
+            <span>{{ inquirySuccessMsg }}</span>
+          </div>
+
+          <div class="inquiry-alert error" *ngIf="inquiryErrorMsg">
+            <span class="material-icons">error</span>
+            <span>{{ inquiryErrorMsg }}</span>
+          </div>
+        </div>
+
+        <form class="inquiry-form" (ngSubmit)="submitInquiry()">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Full Name <span class="req">*</span></label>
+              <input
+                type="text"
+                class="form-input"
+                [(ngModel)]="inquiryForm.name"
+                name="name"
+                placeholder="e.g. Rahul Sharma"
+                required
+              />
+            </div>
+
+            <div class="form-field">
+              <label>Email Address <span class="req">*</span></label>
+              <input
+                type="email"
+                class="form-input"
+                [(ngModel)]="inquiryForm.email"
+                name="email"
+                placeholder="e.g. rahul&#64;gmail.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label>Mobile Number <span class="req">*</span></label>
+              <input
+                type="tel"
+                class="form-input"
+                [(ngModel)]="inquiryForm.phone"
+                name="phone"
+                placeholder="e.g. 9876543210"
+                required
+              />
+            </div>
+
+            <div class="form-field">
+              <label>Course of Interest</label>
+              <select
+                class="form-input"
+                [(ngModel)]="inquiryForm.courseInterested"
+                name="courseInterested"
+              >
+                <option value="B.Tech in Computer Science & Engineering">B.Tech Computer Science &amp; Engg (CSE)</option>
+                <option value="B.Tech in Information Technology">B.Tech Information Technology (IT)</option>
+                <option value="B.Tech in Electronics & Communication">B.Tech Electronics &amp; Comm. (ECE)</option>
+                <option value="Bachelor of Computer Applications (BCA)">Bachelor of Computer Applications (BCA)</option>
+                <option value="Master of Computer Applications (MCA)">Master of Computer Applications (MCA)</option>
+                <option value="Bachelor of Business Administration (BBA)">Bachelor of Business Administration (BBA)</option>
+                <option value="Master of Business Administration (MBA)">Master of Business Administration (MBA)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label>Your Inquiry / Message <span class="req">*</span></label>
+            <textarea
+              class="form-input"
+              rows="3"
+              [(ngModel)]="inquiryForm.message"
+              name="message"
+              placeholder="Ask about admission process, cutoff ranks, fee installments, hostel accommodation..."
+              required
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit-inquiry" [disabled]="isSubmittingInquiry">
+            <span class="material-icons">send</span>
+            <span *ngIf="!isSubmittingInquiry">Submit Admission Inquiry</span>
+            <span *ngIf="isSubmittingInquiry">Submitting...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>

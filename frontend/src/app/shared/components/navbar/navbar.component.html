@@ -1,0 +1,136 @@
+<!-- Top Bar (Address, Helpline, Email, Accreditations & Official Link) -->
+<div class="iem-top-bar">
+  <div class="top-bar-container">
+    <div class="top-bar-left">
+      <span class="top-item">
+        <span class="material-icons top-icon">place</span> Sector V, Salt Lake, Kolkata - 700091
+      </span>
+      <span class="top-divider">|</span>
+      <span class="top-item">
+        <span class="material-icons top-icon">call</span> Helpline: +91 33 2357 2059 / 2995
+      </span>
+      <span class="top-divider">|</span>
+      <span class="top-item">
+        <span class="material-icons top-icon">email</span> admissions&#64;iemcal.com
+      </span>
+    </div>
+    <div class="top-bar-right">
+      <span class="top-accred">NAAC Grade 'A' &bull; NBA Accredited &bull; AICTE Approved</span>
+      <a href="https://iem.edu.in" target="_blank" rel="noopener noreferrer" class="top-official-link">
+        Official IEM Website &rarr;
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Navbar -->
+<header class="iem-navbar">
+  <div class="nav-container">
+    <!-- Brand Logo & Titles -->
+    <a routerLink="/" class="brand-link">
+      <img src="assets/iem-logo.png" alt="IEM Kolkata Logo" class="brand-logo" />
+      <div class="brand-text">
+        <span class="brand-title">IEM KOLKATA</span>
+        <span class="brand-subtitle">ADMISSION PORTAL &bull; 2026-2027</span>
+      </div>
+    </a>
+
+    <!-- Navigation Links -->
+    <nav class="nav-links" [class.open]="isMenuOpen">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+        <span class="material-icons">home</span> Home
+      </a>
+      <a routerLink="/" fragment="about" (click)="navigateToSection('about', $event)" class="nav-item">
+        <span class="material-icons">account_balance</span> About IEM
+      </a>
+      <a routerLink="/" fragment="contact" (click)="navigateToSection('contact', $event)" class="nav-item">
+        <span class="material-icons">headset_mic</span> Contact &amp; Helpdesk
+      </a>
+      <a routerLink="/track" routerLinkActive="active" class="nav-item">
+        <span class="material-icons">radar</span> Track Status
+      </a>
+
+      <!-- Student Authenticated Links -->
+      <ng-container *ngIf="authService.isStudent()">
+        <a routerLink="/student/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="material-icons">dashboard</span> Dashboard
+        </a>
+        <a routerLink="/student/apply" routerLinkActive="active" class="nav-item">
+          <span class="material-icons">edit_document</span> Apply Now
+        </a>
+        <a routerLink="/student/documents" routerLinkActive="active" class="nav-item">
+          <span class="material-icons">folder_shared</span> Documents
+        </a>
+      </ng-container>
+
+      <!-- Officer Authenticated Links -->
+      <ng-container *ngIf="authService.isOfficer()">
+        <a routerLink="/officer/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="material-icons">verified_user</span> Scrutiny Queue
+        </a>
+      </ng-container>
+
+      <!-- Admin Authenticated Links -->
+      <ng-container *ngIf="authService.isAdmin()">
+        <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="material-icons">admin_panel_settings</span> Admin Panel
+        </a>
+      </ng-container>
+    </nav>
+
+    <!-- Right Controls -->
+    <div class="nav-actions">
+      <!-- Theme Toggle (Moon/Sun Circle) -->
+      <button class="theme-circle-btn" (click)="toggleTheme()" [title]="(themeService.isDarkMode$ | async) ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+        <span class="material-icons">{{ (themeService.isDarkMode$ | async) ? 'light_mode' : 'dark_mode' }}</span>
+      </button>
+
+      <!-- Notifications (Logged in) -->
+      <div class="notif-wrapper" *ngIf="authService.isAuthenticated()">
+        <button class="icon-btn notif-btn" (click)="toggleNotifications()" title="Notifications">
+          <span class="material-icons">notifications</span>
+          <span class="badge-dot" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </button>
+
+        <div class="notif-dropdown" *ngIf="showNotifications">
+          <div class="notif-header">
+            <h4>Notifications</h4>
+            <button class="mark-btn" (click)="markAllRead()">Mark all as read</button>
+          </div>
+          <div class="notif-list">
+            <div *ngIf="notifications.length === 0" class="notif-empty">
+              No new notifications.
+            </div>
+            <div *ngFor="let n of notifications" class="notif-item" [class.unread]="!n.isRead">
+              <div class="notif-title">{{ n.title }}</div>
+              <div class="notif-msg">{{ n.message }}</div>
+              <div class="notif-time">{{ n.createdAt | date:'short' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Controls (Guest) -->
+      <div class="auth-controls" *ngIf="!authService.isAuthenticated()">
+        <a routerLink="/auth/login" class="nav-signin-btn">Sign In</a>
+        <a routerLink="/auth/register" class="nav-register-btn">Register</a>
+      </div>
+
+      <!-- User Profile (Logged in) -->
+      <div class="user-profile" *ngIf="authService.isAuthenticated()">
+        <div class="user-chip">
+          <span class="user-name">{{ authService.currentUserValue?.name }}</span>
+          <span class="user-role badge">{{ authService.currentUserValue?.role }}</span>
+        </div>
+        <button class="icon-btn logout-btn" (click)="logout()" title="Logout">
+          <span class="material-icons">logout</span>
+        </button>
+      </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button class="icon-btn mobile-menu-toggle" (click)="isMenuOpen = !isMenuOpen">
+        <span class="material-icons">{{ isMenuOpen ? 'close' : 'menu' }}</span>
+      </button>
+    </div>
+  </div>
+</header>

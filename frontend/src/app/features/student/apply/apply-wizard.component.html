@@ -1,0 +1,1040 @@
+<div class="wizard-page container">
+  <!-- Top Spec Compliance Header -->
+  <div class="fr-spec-header card">
+    <div class="header-content">
+      <div class="badge-row">
+        <span class="spec-badge">IEEE 830 Specification</span>
+        <span class="spec-badge blue">IEM Salt Lake, Kolkata</span>
+        <span class="spec-badge status-draft" *ngIf="currentStep < 6">Status: {{ draftStatus }}</span>
+        <span class="spec-badge status-submitted" *ngIf="currentStep === 6 && arn">ARN: {{ arn }}</span>
+      </div>
+      <h2>IEM Academic Admission Application System</h2>
+      <p class="subtitle">Complete functional workflow: Registration &rarr; Dynamic Form &rarr; Document Management &rarr; ARN Generation &rarr; Multi-Channel Fee Payment &rarr; PDF Receipt.</p>
+    </div>
+
+    <!-- Autosave Draft Action Bar (FR-8) -->
+    <div class="draft-action-bar" *ngIf="currentStep < 6">
+      <div class="draft-info">
+        <span class="material-icons">history</span>
+        <span *ngIf="lastSavedTime">
+          Draft last saved at: <strong>{{ lastSavedTime | date:'mediumTime' }}</strong>
+        </span>
+        <span *ngIf="!lastSavedTime">
+          Application draft auto-saves as you type. Incomplete fields are allowed.
+        </span>
+      </div>
+      <button class="btn btn-outline btn-sm" (click)="saveDraft(true)" [disabled]="isSaving || !selectedCourse">
+        <span class="material-icons">save</span>
+        <span>{{ isSaving ? 'Saving...' : 'Save Application as Draft' }}</span>
+      </button>
+    </div>
+
+    <!-- Alert / Toast Message -->
+    <div *ngIf="draftNotification" class="alert alert-success">
+      <span class="material-icons">check_circle</span>
+      <span>{{ draftNotification }}</span>
+    </div>
+  </div>
+
+  <!-- Stepper Navigation Bar -->
+  <div class="stepper-bar card">
+    <div class="step-node" [class.active]="currentStep === 1" [class.completed]="currentStep > 1" (click)="goToStep(1)">
+      <div class="step-circle">1</div>
+      <div class="step-label">Course Preference</div>
+    </div>
+    <div class="step-line" [class.filled]="currentStep > 1"></div>
+
+    <div class="step-node" [class.active]="currentStep === 2" [class.completed]="currentStep > 2" (click)="selectedCourse && goToStep(2)">
+      <div class="step-circle">2</div>
+      <div class="step-label">Personal Details</div>
+    </div>
+    <div class="step-line" [class.filled]="currentStep > 2"></div>
+
+    <div class="step-node" [class.active]="currentStep === 3" [class.completed]="currentStep > 3" (click)="selectedCourse && goToStep(3)">
+      <div class="step-circle">3</div>
+      <div class="step-label">Academic Details</div>
+    </div>
+    <div class="step-line" [class.filled]="currentStep > 3"></div>
+
+    <div class="step-node" [class.active]="currentStep === 4" [class.completed]="currentStep > 4" (click)="selectedCourse && goToStep(4)">
+      <div class="step-circle">4</div>
+      <div class="step-label">Documents</div>
+    </div>
+    <div class="step-line" [class.filled]="currentStep > 4"></div>
+
+    <div class="step-node" [class.active]="currentStep === 5" [class.completed]="currentStep > 5" (click)="selectedCourse && goToStep(5)">
+      <div class="step-circle">5</div>
+      <div class="step-label">Review & ARN</div>
+    </div>
+    <div class="step-line" [class.filled]="currentStep > 5"></div>
+
+    <div class="step-node" [class.active]="currentStep === 6" [class.completed]="paymentSuccess">
+      <div class="step-circle">6</div>
+      <div class="step-label">Online Payment</div>
+    </div>
+  </div>
+
+  <!-- Main Wizard Form Container -->
+  <div class="wizard-body card" *ngIf="!isLoading" [formGroup]="form">
+
+    <!-- ================= STEP 1: Course Selection (FR-6) ================= -->
+    <div *ngIf="currentStep === 1" class="step-container">
+      <div class="step-header">
+        <div class="step-fr-tag">FR-6: Course Preference Selection</div>
+        <h3>Step 1: Choose Your Degree Program</h3>
+        <p>Select the undergraduate or postgraduate academic program you wish to apply for in IEM Kolkata.</p>
+      </div>
+
+      <div class="form-group select-dropdown-box">
+        <label for="courseDropdown"><strong>Quick Course Select (Dropdown):</strong></label>
+        <select
+          id="courseDropdown"
+          class="form-control"
+          [value]="selectedCourse?._id || ''"
+          (change)="onCourseDropdownChange($any($event.target).value)"
+        >
+          <option value="" disabled>-- Choose Degree Course --</option>
+          <option *ngFor="let course of courses" [value]="course._id">
+            {{ course.name }} ({{ course.courseCode }}) - {{ course.department }} - ₹{{ course.feesStructure.totalCourseFee | number }}
+          </option>
+        </select>
+      </div>
+
+      <div class="courses-selector-grid">
+        <div
+          class="course-select-card"
+          *ngFor="let course of courses"
+          [class.selected]="selectedCourse?._id === course._id"
+          (click)="selectCourse(course)"
+        >
+          <div class="card-radio">
+            <span class="material-icons">{{ selectedCourse?._id === course._id ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+          </div>
+          <div class="card-body">
+            <div class="code-badge">{{ course.courseCode }}</div>
+            <h4>{{ course.name }}</h4>
+            <p class="dept-text">{{ course.department }}</p>
+            <div class="meta-row">
+              <span>Duration: <strong>{{ course.duration }}</strong></span>
+              <span>Available Seats: <strong class="seat-badge">{{ course.availableSeats }}</strong></span>
+            </div>
+            <div class="fee-row">
+              <span>Total Program Fee: <strong>₹ {{ course.feesStructure.totalCourseFee | number }}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-secondary" (click)="saveDraft(true)" [disabled]="!selectedCourse || isSaving">
+          <span class="material-icons">save</span> Save Draft
+        </button>
+        <button class="btn btn-primary" (click)="goToStep(2)" [disabled]="!selectedCourse || isSaving">
+          <span>Continue to Personal Details &rarr;</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= STEP 2: Personal Details (FR-6 & FR-7) ================= -->
+    <div *ngIf="currentStep === 2" class="step-container">
+      <div class="step-header">
+        <div class="step-fr-tag">FR-6: Online Application Form | FR-7: Mandatory Field Validation</div>
+        <h3>Step 2: Candidate Personal Information</h3>
+        <p>All mandatory fields marked with an asterisk (<span class="required-star">*</span>) must be completed before submission.</p>
+      </div>
+
+      <div class="form-grid">
+        <!-- Full Name (FR-6: 2-100 characters, only alphabets and spaces) -->
+        <div class="form-group">
+          <label for="fullName">
+            Full Name <span class="required-star">*</span>
+            <span class="constraint-hint">(2–100 characters, alphabets & spaces only)</span>
+          </label>
+          <input
+            id="fullName"
+            type="text"
+            class="form-control"
+            formControlName="fullName"
+            placeholder="e.g. Rahul Roy"
+            [class.is-invalid]="form.get('fullName')?.invalid && form.get('fullName')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('fullName')?.invalid && form.get('fullName')?.touched">
+            <span *ngIf="form.get('fullName')?.errors?.['required']">Full Name is required.</span>
+            <span *ngIf="form.get('fullName')?.errors?.['minlength']">Full Name must be at least 2 characters.</span>
+            <span *ngIf="form.get('fullName')?.errors?.['maxlength']">Full Name cannot exceed 100 characters.</span>
+            <span *ngIf="form.get('fullName')?.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+          </div>
+        </div>
+
+        <!-- Date of Birth (FR-6: valid past date) -->
+        <div class="form-group">
+          <label for="dob">
+            Date of Birth <span class="required-star">*</span>
+            <span class="constraint-hint">(Valid past date)</span>
+          </label>
+          <input
+            id="dob"
+            type="date"
+            class="form-control"
+            formControlName="dob"
+            [class.is-invalid]="form.get('dob')?.invalid && form.get('dob')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('dob')?.invalid && form.get('dob')?.touched">
+            Date of Birth is required and must be a valid past date.
+          </div>
+        </div>
+
+        <!-- Gender (FR-6: Dropdown: Male/Female/Other) -->
+        <div class="form-group">
+          <label for="gender">Gender <span class="required-star">*</span></label>
+          <select id="gender" class="form-control" formControlName="gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Nationality (FR-6: max 50 chars) -->
+        <div class="form-group">
+          <label for="nationality">Nationality <span class="required-star">*</span></label>
+          <input
+            id="nationality"
+            type="text"
+            class="form-control"
+            formControlName="nationality"
+            placeholder="Indian"
+            maxlength="50"
+          />
+        </div>
+
+        <!-- Category (FR-6: Dropdown: General/OBC/SC/ST/EWS) -->
+        <div class="form-group">
+          <label for="category">
+            Category <span class="required-star">*</span>
+            <span class="constraint-hint" *ngIf="isCategoryCertificateRequired()">(Requires Certificate in Step 4)</span>
+          </label>
+          <select id="category" class="form-control" formControlName="category">
+            <option value="General">General</option>
+            <option value="OBC">OBC (Other Backward Classes)</option>
+            <option value="SC">SC (Scheduled Caste)</option>
+            <option value="ST">ST (Scheduled Tribe)</option>
+            <option value="EWS">EWS (Economically Weaker Section)</option>
+          </select>
+        </div>
+
+        <!-- Phone (FR-7: Exactly 10 digits) -->
+        <div class="form-group">
+          <label for="phone">
+            Mobile Phone Number <span class="required-star">*</span>
+            <span class="constraint-hint">(Exactly 10 numeric digits)</span>
+          </label>
+          <input
+            id="phone"
+            type="text"
+            class="form-control"
+            formControlName="phone"
+            placeholder="9876543210"
+            maxlength="10"
+            [class.is-invalid]="form.get('phone')?.invalid && form.get('phone')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('phone')?.invalid && form.get('phone')?.touched">
+            Phone number must be exactly 10 numeric digits.
+          </div>
+        </div>
+
+        <!-- Email (FR-7: Valid email address) -->
+        <div class="form-group">
+          <label for="email">
+            Email Address <span class="required-star">*</span>
+            <span class="constraint-hint">(Max 254 characters)</span>
+          </label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="candidate@example.com"
+            [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+            Please provide a valid email address.
+          </div>
+        </div>
+
+        <!-- City (FR-6: 2-50 characters) -->
+        <div class="form-group">
+          <label for="city">City <span class="required-star">*</span></label>
+          <input
+            id="city"
+            type="text"
+            class="form-control"
+            formControlName="city"
+            placeholder="e.g. Kolkata"
+            [class.is-invalid]="form.get('city')?.invalid && form.get('city')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('city')?.invalid && form.get('city')?.touched">
+            City must be between 2 and 50 characters.
+          </div>
+        </div>
+
+        <!-- State (FR-6: max 50 characters) -->
+        <div class="form-group">
+          <label for="state">State / Province <span class="required-star">*</span></label>
+          <input
+            id="state"
+            type="text"
+            class="form-control"
+            formControlName="state"
+            placeholder="e.g. West Bengal"
+            [class.is-invalid]="form.get('state')?.invalid && form.get('state')?.touched"
+          />
+        </div>
+
+        <!-- PIN Code (FR-7: Exactly 6 digits) -->
+        <div class="form-group">
+          <label for="pincode">
+            PIN Code <span class="required-star">*</span>
+            <span class="constraint-hint">(Exactly 6 digits)</span>
+          </label>
+          <input
+            id="pincode"
+            type="text"
+            class="form-control"
+            formControlName="pincode"
+            placeholder="700091"
+            maxlength="6"
+            [class.is-invalid]="form.get('pincode')?.invalid && form.get('pincode')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('pincode')?.invalid && form.get('pincode')?.touched">
+            PIN Code must be exactly 6 numeric digits.
+          </div>
+        </div>
+
+        <!-- Full Residential Address (FR-6: 10-500 characters) -->
+        <div class="form-group full-width">
+          <label for="address">
+            Residential Address <span class="required-star">*</span>
+            <span class="constraint-hint">(10–500 characters)</span>
+          </label>
+          <textarea
+            id="address"
+            rows="3"
+            class="form-control"
+            formControlName="address"
+            placeholder="Enter complete permanent residential address with locality/street"
+            [class.is-invalid]="form.get('address')?.invalid && form.get('address')?.touched"
+          ></textarea>
+          <div class="invalid-feedback" *ngIf="form.get('address')?.invalid && form.get('address')?.touched">
+            Address must be between 10 and 500 characters.
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-outline" (click)="goToStep(1)">&larr; Back to Program</button>
+        <button class="btn btn-secondary" (click)="saveDraft(true)">
+          <span class="material-icons">save</span> Save Draft
+        </button>
+        <button class="btn btn-primary" (click)="goToStep(3)">
+          Continue to Academic Qualifications &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= STEP 3: Academic Qualifications (FR-6 & FR-7) ================= -->
+    <div *ngIf="currentStep === 3" class="step-container">
+      <div class="step-header">
+        <div class="step-fr-tag">FR-6: Academic Qualifications | FR-7: Range & Mandatory Validation</div>
+        <h3>Step 3: Academic Qualifications & Merit Records</h3>
+        <p>Provide details of qualifying examinations for merit list ranking.</p>
+      </div>
+
+      <div class="form-grid">
+        <!-- Qualification (FR-6: Dropdown) -->
+        <div class="form-group">
+          <label for="qualification">Qualifying Exam Level <span class="required-star">*</span></label>
+          <select id="qualification" class="form-control" formControlName="qualification">
+            <option value="10+2 / Higher Secondary">10+2 / Higher Secondary / Intermediate</option>
+            <option value="Diploma in Engineering">Diploma in Engineering (Polytechnic)</option>
+            <option value="Bachelor's Degree (Graduation)">Bachelor's Degree (B.Tech / B.Sc / BCA / BBA)</option>
+            <option value="Master's Degree (Post-Graduation)">Master's Degree (M.Tech / M.Sc / MCA / MBA)</option>
+            <option value="Other Recognized Equivalent">Other Recognized Equivalent</option>
+          </select>
+        </div>
+
+        <!-- Board / University (FR-6: 2-150 characters) -->
+        <div class="form-group">
+          <label for="board">
+            Board / Council / University <span class="required-star">*</span>
+            <span class="constraint-hint">(2–150 characters)</span>
+          </label>
+          <input
+            id="board"
+            type="text"
+            class="form-control"
+            formControlName="board"
+            placeholder="e.g. CBSE / ISC / WBCHSE / MAKAUT"
+            [class.is-invalid]="form.get('board')?.invalid && form.get('board')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('board')?.invalid && form.get('board')?.touched">
+            Board/University is required (2–150 characters).
+          </div>
+        </div>
+
+        <!-- Passing Year (FR-6: 4 digits) -->
+        <div class="form-group">
+          <label for="passingYear">
+            Year of Passing <span class="required-star">*</span>
+            <span class="constraint-hint">(4-digit year, e.g. 2025)</span>
+          </label>
+          <input
+            id="passingYear"
+            type="number"
+            class="form-control"
+            formControlName="passingYear"
+            placeholder="2025"
+            [class.is-invalid]="form.get('passingYear')?.invalid && form.get('passingYear')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('passingYear')?.invalid && form.get('passingYear')?.touched">
+            Please enter a valid 4-digit passing year.
+          </div>
+        </div>
+
+        <!-- Percentage / CGPA (FR-6 & FR-7: Decimal, 0-100 valid range) -->
+        <div class="form-group">
+          <label for="percentage">
+            Aggregate Percentage / Marks (%) <span class="required-star">*</span>
+            <span class="constraint-hint">(Valid range: 0.00 – 100.00)</span>
+          </label>
+          <input
+            id="percentage"
+            type="number"
+            step="0.01"
+            class="form-control"
+            formControlName="percentage"
+            placeholder="e.g. 88.50"
+            [class.is-invalid]="form.get('percentage')?.invalid && form.get('percentage')?.touched"
+          />
+          <div class="invalid-feedback" *ngIf="form.get('percentage')?.invalid && form.get('percentage')?.touched">
+            Percentage must be between 0 and 100.
+          </div>
+        </div>
+
+        <!-- Stream -->
+        <div class="form-group">
+          <label for="stream">Stream / Major Discipline</label>
+          <select id="stream" class="form-control" formControlName="stream">
+            <option value="Science">Science (PCM / PCB)</option>
+            <option value="Commerce">Commerce</option>
+            <option value="Arts / Humanities">Arts / Humanities</option>
+            <option value="Engineering & Technology">Engineering & Technology</option>
+            <option value="Computer Applications">Computer Applications / IT</option>
+            <option value="Management Studies">Management Studies</option>
+          </select>
+        </div>
+
+        <!-- Entrance Exam -->
+        <div class="form-group">
+          <label for="entranceExam">Competitive Entrance Exam (If Applicable)</label>
+          <select id="entranceExam" class="form-control" formControlName="entranceExam">
+            <option value="IEMJEE">IEMJEE (IEM Joint Entrance Exam)</option>
+            <option value="WBJEE">WBJEE (West Bengal Joint Entrance)</option>
+            <option value="JEE Main">JEE Main (All India)</option>
+            <option value="JECA / GATE / CAT">JECA / GATE / CAT / MAT</option>
+            <option value="Direct / Merit Based">Direct / Merit Based</option>
+          </select>
+        </div>
+
+        <!-- Entrance Rank -->
+        <div class="form-group">
+          <label for="entranceRank">Entrance Examination Rank / Percentile</label>
+          <input
+            id="entranceRank"
+            type="text"
+            class="form-control"
+            formControlName="entranceRank"
+            placeholder="e.g. WBJEE GMR 4120 or IEMJEE 182"
+          />
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-outline" (click)="goToStep(2)">&larr; Back to Personal Info</button>
+        <button class="btn btn-secondary" (click)="saveDraft(true)">
+          <span class="material-icons">save</span> Save Draft
+        </button>
+        <button class="btn btn-primary" (click)="goToStep(4)">
+          Continue to Document Upload &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= STEP 4: Documents Upload & Management (FR-9, FR-10, FR-11) ================= -->
+    <div *ngIf="currentStep === 4" class="step-container">
+      <div class="step-header">
+        <div class="step-fr-tag">FR-9: Document Upload | FR-10: File Size &le; 5MB | FR-11: Manage Documents</div>
+        <h3>Step 4: Upload & Manage Required Certificates</h3>
+        <p>Supported file formats: <strong>PDF, JPEG, PNG</strong>. Individual file size strictly limited to <strong>5 MB max</strong>.</p>
+      </div>
+
+      <div *ngIf="uploadError" class="alert alert-danger">
+        <span class="material-icons">error</span>
+        <span>{{ uploadError }}</span>
+      </div>
+
+      <div class="doc-management-grid">
+        <!-- 1. Photograph (FR-9: Image File, JPEG/PNG, Required: Yes) -->
+        <div class="doc-card" [class.is-uploaded]="uploadedDocs['PHOTO']">
+          <div class="doc-badge-status" [class.badge-done]="uploadedDocs['PHOTO']">
+            {{ uploadedDocs['PHOTO'] ? 'Uploaded' : 'Mandatory *' }}
+          </div>
+          <div class="doc-icon"><span class="material-icons">account_box</span></div>
+          <h4>Passport Size Photograph <span class="required-star">*</span></h4>
+          <p class="format-hint">Formats: <strong>JPEG, PNG</strong> | Max Size: <strong>5 MB</strong></p>
+
+          <div class="uploaded-file-meta" *ngIf="uploadedDocs['PHOTO']">
+            <span class="material-icons check">check_circle</span>
+            <div class="meta-texts">
+              <span class="fname">{{ uploadedDocs['PHOTO'].originalFileName }}</span>
+              <span class="fsize">({{ (uploadedDocs['PHOTO'].fileSize / 1024).toFixed(1) }} KB)</span>
+            </div>
+          </div>
+
+          <div class="doc-actions-row">
+            <!-- Upload new if not yet uploaded -->
+            <label class="btn btn-primary btn-sm" *ngIf="!uploadedDocs['PHOTO']">
+              <span class="material-icons">cloud_upload</span> Choose File
+              <input type="file" (change)="onFileUpload($event, 'PHOTO')" accept=".jpg,.jpeg,.png" hidden />
+            </label>
+
+            <!-- FR-11 Actions: View, Replace, Delete -->
+            <div class="btn-group" *ngIf="uploadedDocs['PHOTO']">
+              <button class="btn btn-outline btn-xs" (click)="viewDocument(uploadedDocs['PHOTO'])" title="View Document (FR-11)">
+                <span class="material-icons">visibility</span> View
+              </button>
+              <button class="btn btn-outline btn-xs" (click)="triggerFileInput('replacePhotoInput')" title="Replace Document (FR-11)">
+                <span class="material-icons">cached</span> Replace
+              </button>
+              <button class="btn btn-danger-outline btn-xs" (click)="deleteDocument('PHOTO')" title="Delete Document (FR-11)">
+                <span class="material-icons">delete</span> Delete
+              </button>
+              <input id="replacePhotoInput" type="file" (change)="onFileUpload($event, 'PHOTO')" accept=".jpg,.jpeg,.png" hidden />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Academic Mark Sheet (FR-9: File, PDF/JPEG/PNG, Required: Yes) -->
+        <div class="doc-card" [class.is-uploaded]="uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']">
+          <div class="doc-badge-status" [class.badge-done]="uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']">
+            {{ (uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']) ? 'Uploaded' : 'Mandatory *' }}
+          </div>
+          <div class="doc-icon"><span class="material-icons">description</span></div>
+          <h4>Qualifying Mark Sheet <span class="required-star">*</span></h4>
+          <p class="format-hint">Formats: <strong>PDF, JPEG, PNG</strong> | Max Size: <strong>5 MB</strong></p>
+
+          <div class="uploaded-file-meta" *ngIf="uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']">
+            <span class="material-icons check">check_circle</span>
+            <div class="meta-texts">
+              <span class="fname">{{ (uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']).originalFileName }}</span>
+              <span class="fsize">({{ (((uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']).fileSize) / 1024).toFixed(1) }} KB)</span>
+            </div>
+          </div>
+
+          <div class="doc-actions-row">
+            <label class="btn btn-primary btn-sm" *ngIf="!(uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET'])">
+              <span class="material-icons">cloud_upload</span> Choose File
+              <input type="file" (change)="onFileUpload($event, 'CLASS_12_MARKSHEET')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </label>
+
+            <!-- FR-11 Actions: View, Replace, Delete -->
+            <div class="btn-group" *ngIf="uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET']">
+              <button class="btn btn-outline btn-xs" (click)="viewDocument(uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET'])">
+                <span class="material-icons">visibility</span> View
+              </button>
+              <button class="btn btn-outline btn-xs" (click)="triggerFileInput('replaceMarksheetInput')">
+                <span class="material-icons">cached</span> Replace
+              </button>
+              <button class="btn btn-danger-outline btn-xs" (click)="deleteDocument('MARKSHEET')">
+                <span class="material-icons">delete</span> Delete
+              </button>
+              <input id="replaceMarksheetInput" type="file" (change)="onFileUpload($event, 'CLASS_12_MARKSHEET')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Government ID Proof (FR-9: File, PDF/JPEG/PNG, Required: Yes) -->
+        <div class="doc-card" [class.is-uploaded]="uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']">
+          <div class="doc-badge-status" [class.badge-done]="uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']">
+            {{ (uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']) ? 'Uploaded' : 'Mandatory *' }}
+          </div>
+          <div class="doc-icon"><span class="material-icons">badge</span></div>
+          <h4>Government ID Proof <span class="required-star">*</span></h4>
+          <p class="format-hint">Aadhaar / Passport / Voter ID (PDF/JPEG/PNG &le; 5MB)</p>
+
+          <div class="uploaded-file-meta" *ngIf="uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']">
+            <span class="material-icons check">check_circle</span>
+            <div class="meta-texts">
+              <span class="fname">{{ (uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']).originalFileName }}</span>
+              <span class="fsize">({{ (((uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']).fileSize) / 1024).toFixed(1) }} KB)</span>
+            </div>
+          </div>
+
+          <div class="doc-actions-row">
+            <label class="btn btn-primary btn-sm" *ngIf="!(uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD'])">
+              <span class="material-icons">cloud_upload</span> Choose File
+              <input type="file" (change)="onFileUpload($event, 'AADHAAR_CARD')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </label>
+
+            <!-- FR-11 Actions: View, Replace, Delete -->
+            <div class="btn-group" *ngIf="uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD']">
+              <button class="btn btn-outline btn-xs" (click)="viewDocument(uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD'])">
+                <span class="material-icons">visibility</span> View
+              </button>
+              <button class="btn btn-outline btn-xs" (click)="triggerFileInput('replaceIdProofInput')">
+                <span class="material-icons">cached</span> Replace
+              </button>
+              <button class="btn btn-danger-outline btn-xs" (click)="deleteDocument('AADHAAR_CARD')">
+                <span class="material-icons">delete</span> Delete
+              </button>
+              <input id="replaceIdProofInput" type="file" (change)="onFileUpload($event, 'AADHAAR_CARD')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Category Certificate (FR-9: File, PDF/JPEG/PNG, Conditional: Required for OBC/SC/ST/EWS) -->
+        <div class="doc-card" [class.is-uploaded]="uploadedDocs['CATEGORY_CERTIFICATE']" [class.is-optional]="!isCategoryCertificateRequired()">
+          <div class="doc-badge-status" [class.badge-done]="uploadedDocs['CATEGORY_CERTIFICATE']">
+            {{ isCategoryCertificateRequired() ? (uploadedDocs['CATEGORY_CERTIFICATE'] ? 'Uploaded' : 'Mandatory for ' + form.get('category')?.value + ' *') : 'Not Applicable (General)' }}
+          </div>
+          <div class="doc-icon"><span class="material-icons">verified</span></div>
+          <h4>
+            Category Certificate
+            <span class="required-star" *ngIf="isCategoryCertificateRequired()">*</span>
+            <span class="optional-tag" *ngIf="!isCategoryCertificateRequired()">(General)</span>
+          </h4>
+          <p class="format-hint">Formats: <strong>PDF, JPEG, PNG</strong> | Max Size: <strong>5 MB</strong></p>
+
+          <div class="uploaded-file-meta" *ngIf="uploadedDocs['CATEGORY_CERTIFICATE']">
+            <span class="material-icons check">check_circle</span>
+            <div class="meta-texts">
+              <span class="fname">{{ uploadedDocs['CATEGORY_CERTIFICATE'].originalFileName }}</span>
+              <span class="fsize">({{ (uploadedDocs['CATEGORY_CERTIFICATE'].fileSize / 1024).toFixed(1) }} KB)</span>
+            </div>
+          </div>
+
+          <div class="doc-actions-row">
+            <label class="btn btn-outline btn-sm" *ngIf="!uploadedDocs['CATEGORY_CERTIFICATE']">
+              <span class="material-icons">cloud_upload</span> Choose File
+              <input type="file" (change)="onFileUpload($event, 'CATEGORY_CERTIFICATE')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </label>
+
+            <!-- FR-11 Actions: View, Replace, Delete -->
+            <div class="btn-group" *ngIf="uploadedDocs['CATEGORY_CERTIFICATE']">
+              <button class="btn btn-outline btn-xs" (click)="viewDocument(uploadedDocs['CATEGORY_CERTIFICATE'])">
+                <span class="material-icons">visibility</span> View
+              </button>
+              <button class="btn btn-outline btn-xs" (click)="triggerFileInput('replaceCategoryInput')">
+                <span class="material-icons">cached</span> Replace
+              </button>
+              <button class="btn btn-danger-outline btn-xs" (click)="deleteDocument('CATEGORY_CERTIFICATE')">
+                <span class="material-icons">delete</span> Delete
+              </button>
+              <input id="replaceCategoryInput" type="file" (change)="onFileUpload($event, 'CATEGORY_CERTIFICATE')" accept=".pdf,.jpg,.jpeg,.png" hidden />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="docs-readiness-banner" [class.all-done]="isAllMandatoryDocsUploaded()">
+        <span class="material-icons">{{ isAllMandatoryDocsUploaded() ? 'check_circle' : 'info' }}</span>
+        <span *ngIf="isAllMandatoryDocsUploaded()">
+          All mandatory documents uploaded successfully according to FR-9 & FR-10. Ready for final review.
+        </span>
+        <span *ngIf="!isAllMandatoryDocsUploaded()">
+          Please upload all mandatory documents (Photograph, Marksheet, ID Proof{{ isCategoryCertificateRequired() ? ', and ' + form.get('category')?.value + ' Certificate' : '' }}).
+        </span>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-outline" (click)="goToStep(3)">&larr; Back to Academics</button>
+        <button class="btn btn-secondary" (click)="saveDraft(true)">
+          <span class="material-icons">save</span> Save Draft
+        </button>
+        <button class="btn btn-primary" (click)="goToStep(5)" [disabled]="!isAllMandatoryDocsUploaded()">
+          Continue to Review & Undertaking &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= STEP 5: Final Review & ARN Generation (FR-6, FR-7, FR-12) ================= -->
+    <div *ngIf="currentStep === 5" class="step-container">
+      <div class="step-header">
+        <div class="step-fr-tag">FR-6: Application Review | FR-12: ARN Unique Generation</div>
+        <h3>Step 5: Review Application & Submit for Scrutiny</h3>
+        <p>Review all particulars furnished in the application form before final submission. Upon submission, a unique Application Reference Number (ARN) will be generated.</p>
+      </div>
+
+      <div class="review-sections-grid">
+        <!-- 1. Program Summary -->
+        <div class="review-card">
+          <div class="rc-header">
+            <h4><span class="material-icons">school</span> Selected Degree Program</h4>
+            <button class="btn btn-link btn-xs" (click)="goToStep(1)">Edit</button>
+          </div>
+          <div class="rc-body">
+            <p><strong>Program:</strong> {{ selectedCourse?.name }} ({{ selectedCourse?.courseCode }})</p>
+            <p><strong>Department:</strong> {{ selectedCourse?.department }}</p>
+            <p><strong>Duration:</strong> {{ selectedCourse?.duration }}</p>
+            <p><strong>Total Program Fee:</strong> ₹ {{ selectedCourse?.feesStructure?.totalCourseFee | number }}</p>
+          </div>
+        </div>
+
+        <!-- 2. Personal Details Summary -->
+        <div class="review-card">
+          <div class="rc-header">
+            <h4><span class="material-icons">person</span> Personal Information</h4>
+            <button class="btn btn-link btn-xs" (click)="goToStep(2)">Edit</button>
+          </div>
+          <div class="rc-body">
+            <p><strong>Full Name:</strong> {{ form.get('fullName')?.value }}</p>
+            <p><strong>DOB & Gender:</strong> {{ form.get('dob')?.value | date:'mediumDate' }} | {{ form.get('gender')?.value }}</p>
+            <p><strong>Nationality & Category:</strong> {{ form.get('nationality')?.value }} ({{ form.get('category')?.value }})</p>
+            <p><strong>Email:</strong> {{ form.get('email')?.value }}</p>
+            <p><strong>Phone:</strong> {{ form.get('phone')?.value }}</p>
+            <p><strong>Address:</strong> {{ form.get('address')?.value }}, {{ form.get('city')?.value }}, {{ form.get('state')?.value }} - {{ form.get('pincode')?.value }}</p>
+          </div>
+        </div>
+
+        <!-- 3. Academic Details Summary -->
+        <div class="review-card">
+          <div class="rc-header">
+            <h4><span class="material-icons">menu_book</span> Academic Qualifications</h4>
+            <button class="btn btn-link btn-xs" (click)="goToStep(3)">Edit</button>
+          </div>
+          <div class="rc-body">
+            <p><strong>Qualification Level:</strong> {{ form.get('qualification')?.value }}</p>
+            <p><strong>Board/University:</strong> {{ form.get('board')?.value }}</p>
+            <p><strong>Passing Year:</strong> {{ form.get('passingYear')?.value }}</p>
+            <p><strong>Percentage / Marks:</strong> {{ form.get('percentage')?.value }}%</p>
+            <p><strong>Discipline / Stream:</strong> {{ form.get('stream')?.value }}</p>
+            <p><strong>Entrance Examination:</strong> {{ form.get('entranceExam')?.value }} (Rank: {{ form.get('entranceRank')?.value || 'N/A' }})</p>
+          </div>
+        </div>
+
+        <!-- 4. Uploaded Documents Summary -->
+        <div class="review-card">
+          <div class="rc-header">
+            <h4><span class="material-icons">folder_shared</span> Documents Uploaded</h4>
+            <button class="btn btn-link btn-xs" (click)="goToStep(4)">Manage</button>
+          </div>
+          <div class="rc-body">
+            <div class="doc-chk-item">
+              <span class="material-icons check">check_circle</span>
+              <span>Photo: {{ uploadedDocs['PHOTO']?.originalFileName }}</span>
+            </div>
+            <div class="doc-chk-item">
+              <span class="material-icons check">check_circle</span>
+              <span>Mark Sheet: {{ (uploadedDocs['MARKSHEET'] || uploadedDocs['CLASS_12_MARKSHEET'])?.originalFileName }}</span>
+            </div>
+            <div class="doc-chk-item">
+              <span class="material-icons check">check_circle</span>
+              <span>ID Proof: {{ (uploadedDocs['ID_PROOF'] || uploadedDocs['AADHAAR_CARD'])?.originalFileName }}</span>
+            </div>
+            <div class="doc-chk-item" *ngIf="isCategoryCertificateRequired()">
+              <span class="material-icons check">check_circle</span>
+              <span>Category Cert: {{ uploadedDocs['CATEGORY_CERTIFICATE']?.originalFileName }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Undertaking Checkbox (Mandatory before submission) -->
+      <div class="declaration-box card">
+        <label class="dec-label">
+          <input type="checkbox" [(ngModel)]="declarationAccepted" [ngModelOptions]="{standalone: true}" />
+          <span>
+            <strong>Statutory Undertaking (IEEE 830 FR-6):</strong>
+            I hereby certify and declare that the particulars furnished above are true, complete, and correct. I understand that admission is provisional and subject to physical verification of certificates by the IEM Scrutiny Board. In the event of any discrepancy, my registration will be liable for cancellation.
+          </span>
+        </label>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn btn-outline" (click)="goToStep(4)">&larr; Back to Documents</button>
+        <button class="btn btn-secondary" (click)="saveDraft(true)">
+          <span class="material-icons">save</span> Save Draft
+        </button>
+        <button
+          class="btn btn-success btn-lg"
+          [disabled]="!declarationAccepted || isSaving || form.invalid || !isAllMandatoryDocsUploaded()"
+          (click)="submitApplication()"
+        >
+          <span class="material-icons">verified</span>
+          <span *ngIf="!isSaving">Submit Application & Generate ARN (FR-12)</span>
+          <span *ngIf="isSaving">Submitting Form & Issuing ARN...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= STEP 6: Fee Payment & Receipt (FR-13, FR-14, FR-15) ================= -->
+    <div *ngIf="currentStep === 6" class="step-container">
+      <!-- Submission Confirmed & ARN Displayed -->
+      <div class="arn-banner" *ngIf="arn">
+        <div class="arn-content">
+          <span class="material-icons">assignment_turned_in</span>
+          <div>
+            <h3>Application Reference Number (ARN) Issued</h3>
+            <p>Your unique registration reference is: <strong class="arn-code">{{ arn }}</strong> (Generated on {{ arnGeneratedDate | date:'mediumDate' }})</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-header" *ngIf="!paymentSuccess">
+        <div class="step-fr-tag">FR-13: Online Fee Payment | FR-14: Multiple Payment Methods</div>
+        <h3>Step 6: Pay Application Processing Fee</h3>
+        <p>Complete the non-refundable registration fee payment of <strong>₹ {{ applicationFee | number }}.00</strong> to complete your admission filing.</p>
+      </div>
+
+      <!-- Payment Form (FR-13 & FR-14) -->
+      <div class="payment-box card" *ngIf="!paymentSuccess">
+        <div class="fee-receipt-preview">
+          <div class="preview-row">
+            <span>Institute of Engineering & Management (IEM), Kolkata</span>
+            <span>Academic AY 2026-2027</span>
+          </div>
+          <div class="preview-row">
+            <span>Application Reference Number (ARN)</span>
+            <span><strong>{{ arn || applicationNumber }}</strong></span>
+          </div>
+          <div class="preview-row">
+            <span>Program Applied</span>
+            <span><strong>{{ selectedCourse?.name }} ({{ selectedCourse?.courseCode }})</strong></span>
+          </div>
+          <div class="preview-row total">
+            <span>Total Payable Application Fee</span>
+            <span class="total-amt">₹ {{ applicationFee | number }}.00 (INR)</span>
+          </div>
+        </div>
+
+        <!-- FR-14: Multiple Payment Methods Selector -->
+        <div class="pay-method-tabs">
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod === 'UPI'"
+            (click)="paymentMethod = 'UPI'"
+          >
+            <span class="material-icons">qr_code_2</span>
+            <span>UPI / QR</span>
+          </button>
+
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod === 'DEBIT_CARD'"
+            (click)="paymentMethod = 'DEBIT_CARD'"
+          >
+            <span class="material-icons">credit_card</span>
+            <span>Debit Card</span>
+          </button>
+
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod === 'CREDIT_CARD'"
+            (click)="paymentMethod = 'CREDIT_CARD'"
+          >
+            <span class="material-icons">payment</span>
+            <span>Credit Card</span>
+          </button>
+
+          <button
+            type="button"
+            class="pay-tab"
+            [class.active]="paymentMethod === 'NET_BANKING'"
+            (click)="paymentMethod = 'NET_BANKING'"
+          >
+            <span class="material-icons">account_balance</span>
+            <span>Net Banking</span>
+          </button>
+        </div>
+
+        <!-- Method 1: UPI Form -->
+        <div class="method-panel" *ngIf="paymentMethod === 'UPI'">
+          <h4>UPI Instant Payment (Google Pay / PhonePe / Paytm / BHIM)</h4>
+          <div class="upi-inputs-row">
+            <div class="form-group flex-1">
+              <label for="upiId">Virtual Payment Address (VPA / UPI ID):</label>
+              <input
+                id="upiId"
+                type="text"
+                class="form-control"
+                [(ngModel)]="upiId"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="username@okhdfcbank"
+              />
+              <span class="field-hint">e.g. mobile&#64;upi or username&#64;okaxis</span>
+            </div>
+            <div class="qr-preview-box">
+              <div class="mock-qr">
+                <span class="material-icons qr-icon">qr_code</span>
+                <span class="qr-lbl">Scan IEM Admissions QR</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Method 2 & 3: Card Form (Debit Card / Credit Card) -->
+        <div class="method-panel" *ngIf="paymentMethod === 'DEBIT_CARD' || paymentMethod === 'CREDIT_CARD'">
+          <h4>{{ paymentMethod === 'DEBIT_CARD' ? 'Debit Card' : 'Credit Card' }} Transaction Details</h4>
+          <div class="card-inputs-grid">
+            <div class="form-group full-width">
+              <label>16-Digit Card Number:</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="cardDetails.cardNumber"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="4532 •••• •••• 8912"
+                maxlength="19"
+              />
+            </div>
+            <div class="form-group">
+              <label>Name on Card:</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="cardDetails.cardholderName"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="Cardholder Full Name"
+              />
+            </div>
+            <div class="form-group">
+              <label>Expiry Date (MM/YY):</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="cardDetails.expiryDate"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="12/28"
+                maxlength="5"
+              />
+            </div>
+            <div class="form-group">
+              <label>CVV / CVC (3 Digits):</label>
+              <input
+                type="password"
+                class="form-control"
+                [(ngModel)]="cardDetails.cvv"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="•••"
+                maxlength="3"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Method 4: Net Banking -->
+        <div class="method-panel" *ngIf="paymentMethod === 'NET_BANKING'">
+          <h4>Select Your Banking Institution</h4>
+          <div class="form-group">
+            <label for="bankSelect">Popular Indian Banks:</label>
+            <select
+              id="bankSelect"
+              class="form-control"
+              [(ngModel)]="selectedBank"
+              [ngModelOptions]="{standalone: true}"
+            >
+              <option *ngFor="let bank of banksList" [value]="bank">{{ bank }}</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-success btn-lg btn-block" (click)="payFee()" [disabled]="isProcessingPayment">
+          <span class="material-icons">lock</span>
+          <span *ngIf="!isProcessingPayment">Pay ₹ {{ applicationFee | number }}.00 via Secure Gateway</span>
+          <span *ngIf="isProcessingPayment">Authorizing & Confirming Bank Transaction...</span>
+        </button>
+      </div>
+
+      <!-- FR-15: Payment Success Screen & Receipt Generation -->
+      <div class="payment-success-screen card" *ngIf="paymentSuccess">
+        <div class="success-icon-box">
+          <span class="material-icons">check_circle</span>
+        </div>
+        <h3>Application & Fee Payment Successfully Completed!</h3>
+        <p class="success-desc">
+          Your admission application has been registered with reference <strong>{{ arn || applicationNumber }}</strong>.
+          An official fee payment receipt has been issued and dispatched to your email ({{ form.get('email')?.value }}).
+        </p>
+
+        <div class="receipt-card">
+          <div class="rcp-title-row">
+            <h4><span class="material-icons">receipt_long</span> Official e-Receipt (FR-15)</h4>
+            <span class="badge badge-approved">CONFIRMED & PAID</span>
+          </div>
+          <div class="receipt-grid">
+            <div class="r-row"><span>Application Reference No (ARN):</span> <strong class="arn-highlight">{{ arn || applicationNumber }}</strong></div>
+            <div class="r-row"><span>Receipt Number:</span> <strong>{{ paymentReceipt?.receiptNumber }}</strong></div>
+            <div class="r-row"><span>Transaction ID:</span> <strong>{{ paymentReceipt?.transactionId }}</strong></div>
+            <div class="r-row"><span>Payment Method:</span> <strong>{{ (paymentReceipt?.paymentMethod || paymentMethod) | uppercase }}</strong></div>
+            <div class="r-row"><span>Amount Paid:</span> <strong>₹ {{ paymentReceipt?.amount || applicationFee | number }}.00 (INR)</strong></div>
+            <div class="r-row"><span>Payment Date:</span> <strong>{{ (paymentReceipt?.paidAt || 'now') | date:'medium' }}</strong></div>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <!-- FR-15: Download PDF Receipt -->
+          <button class="btn btn-primary" (click)="downloadReceiptPDF()">
+            <span class="material-icons">receipt</span> Download Official Payment Receipt (PDF)
+          </button>
+
+          <!-- Download Application Form PDF -->
+          <button class="btn btn-secondary" (click)="downloadForm()">
+            <span class="material-icons">download</span> Download Application Form (PDF)
+          </button>
+
+          <!-- Download Application Excel Sheet -->
+          <button class="btn btn-success" (click)="downloadApplicationExcel()">
+            <span class="material-icons">table_chart</span> Download Application (.xlsx)
+          </button>
+
+          <a routerLink="/student/dashboard" class="btn btn-outline">
+            Go to Student Dashboard &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Modal (FR-11: View Document) -->
+  <div class="doc-modal-overlay" *ngIf="showPreviewModal" (click)="closePreviewModal()">
+    <div class="doc-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h4><span class="material-icons">visibility</span> Document Preview: {{ selectedPreviewDoc?.title || selectedPreviewDoc?.originalFileName }}</h4>
+        <button class="btn-close" (click)="closePreviewModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="doc-view-container" *ngIf="selectedPreviewDoc">
+          <!-- PDF preview -->
+          <div *ngIf="isPdf(selectedPreviewDoc)">
+            <p class="pdf-notice">PDF Document: <strong>{{ selectedPreviewDoc.originalFileName }}</strong></p>
+            <div class="modal-actions-bar">
+              <a [href]="selectedPreviewDoc.fileUrl" target="_blank" class="btn btn-primary btn-sm">
+                <span class="material-icons">open_in_new</span> Open PDF in New Tab
+              </a>
+            </div>
+          </div>
+
+          <!-- Image preview -->
+          <div *ngIf="isImage(selectedPreviewDoc)">
+            <img [src]="selectedPreviewDoc.fileUrl" [alt]="selectedPreviewDoc.title" class="preview-img" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" (click)="closePreviewModal()">Close Preview</button>
+      </div>
+    </div>
+  </div>
+</div>

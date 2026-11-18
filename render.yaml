@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: iem-admission-system
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: APPLICATION_FEE
+        value: "2000"
+      - key: MONGODB_URI
+        sync: false
