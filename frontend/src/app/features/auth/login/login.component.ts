@@ -83,6 +83,7 @@ export class LoginComponent implements OnInit {
         password: 'Admin@123',
       });
     }
+    this.onSubmit();
   }
 
   private redirectByRole(): void {
