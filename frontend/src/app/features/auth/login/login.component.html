@@ -56,13 +56,19 @@
           <label for="password">Password</label>
           <a routerLink="/auth/forgot-password" class="forgot-link">Forgot password?</a>
         </div>
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="••••••••"
-          [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
-        />
+        <div class="password-wrapper">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+          />
+          <button type="button" class="toggle-pwd-btn" (click)="togglePassword()" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+            <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
         <div class="error" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']">
           Password is required.
         </div>

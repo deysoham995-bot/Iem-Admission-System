@@ -22,6 +22,11 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   returnUrl = '';
   sessionExpired = false;
+  showPassword = false;
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
@@ -61,6 +66,7 @@ export class LoginComponent implements OnInit {
   }
 
   fillDemo(role: 'student' | 'officer' | 'admin'): void {
+    this.errorMessage = '';
     if (role === 'student') {
       this.loginForm.patchValue({
         email: 'student.rahul@gmail.com',

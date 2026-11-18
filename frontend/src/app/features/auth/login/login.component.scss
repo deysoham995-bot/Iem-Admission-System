@@ -132,6 +132,37 @@
   }
 }
 
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    width: 100%;
+    padding-right: 40px;
+  }
+
+  .toggle-pwd-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+
+    .material-icons {
+      font-size: 1.2rem;
+    }
+
+    &:hover {
+      color: var(--text-main);
+    }
+  }
+}
+
 .btn-block {
   width: 100%;
   margin-top: 8px;

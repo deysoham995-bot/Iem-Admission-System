@@ -20,7 +20,7 @@ const validate = (req, res, next) => {
 // Reusable validation chains
 const registerValidation = [
   check('name', 'Full name is required and must be between 2 and 100 characters').trim().isLength({ min: 2, max: 100 }),
-  check('email', 'Please provide a valid email address').trim().isEmail().normalizeEmail(),
+  check('email', 'Please provide a valid email address').trim().isEmail().toLowerCase(),
   check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
   check('role', 'Role must be student, officer, or admin').optional().isIn(['student', 'officer', 'admin']),
   check('phone', 'Please provide a valid contact number (10-15 digits)')
@@ -31,7 +31,7 @@ const registerValidation = [
 ];
 
 const loginValidation = [
-  check('email', 'Please provide a valid email').trim().isEmail(),
+  check('email', 'Please provide a valid email').trim().isEmail().toLowerCase(),
   check('password', 'Password is required').notEmpty(),
   validate,
 ];
